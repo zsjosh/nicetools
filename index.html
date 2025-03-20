@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一次性密码生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+        }
+
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .password-display {
+            background: #f1f3f5;
+            padding: 1.2rem;
+            border-radius: 16px;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: #495057;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            font-family: 'DM Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: all;
+        }
+
+        @media (max-width: 480px) {
+            .password-display {
+                font-size: 1.1rem;
+                padding: 1rem;
+                min-height: 60px;
+            }
+        }
+
+        .password-display:hover {
+            background: #e9ecef;
+            cursor: pointer;
+        }
+
+        .generate-btn {
+            background: #228be6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+
+        .copy-btn {
+            background: #495057;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #343a40;
+            transform: translateY(-2px);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .copy-message {
+            margin-top: 1rem;
+            color: #40c057;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .copy-message.show {
+            opacity: 1;
+        }
+
+        .options-container {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .option-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .option-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-title {
+            font-size: 0.9rem;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+            color: #495057;
+            cursor: pointer;
+            background: white;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .checkbox-label:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 0.8rem;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked {
+            background: #228be6;
+            border-color: #228be6;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-label span {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .checkbox-label .type-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .checkbox-label .type-chars {
+            font-size: 0.8rem;
+            color: #868e96;
+        }
+
+        .length-control {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .length-input {
+            width: 60px;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            font-family: 'DM Mono', monospace;
+            color: #495057;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .length-input:focus {
+            outline: none;
+            border-color: #228be6;
+            box-shadow: 0 0 0 3px rgba(34, 139, 230, 0.1);
+        }
+
+        .slider-container {
+            flex: 1;
+            position: relative;
+            padding: 10px 0 15px;
+        }
+
+        .slider-track {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .slider-progress {
+            position: absolute;
+            height: 100%;
+            background: #228be6;
+            border-radius: 3px;
+            transition: width 0.2s ease;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 20px;
+            background: transparent;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid #228be6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(34, 139, 230, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 3;
+            margin-top: -6px;
+            opacity: 0;
+        }
+
+        .slider-container:hover input[type="range"]::-webkit-slider-thumb {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2) !important;
+            box-shadow: 0 3px 8px rgba(34, 139, 230, 0.3);
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        .strength-marks {
+            position: absolute;
+            width: 100%;
+            height: 16px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 8px;
+            bottom: -30px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>一次性密码生成器</h1>
+        <div class="options-container">
+            <div class="option-group">
+                <div class="option-title">密码长度</div>
+                <div class="length-control">
+                    <div class="slider-container">
+                        <div class="slider-track">
+                            <div class="slider-progress" id="sliderProgress"></div>
+                        </div>
+                        <input type="range" id="lengthSlider" min="8" max="16" value="8">
+                        <div class="strength-marks">
+                            <div class="strength-mark" data-length="8"></div>
+                            <div class="strength-mark" data-length="10"></div>
+                            <div class="strength-mark" data-length="12"></div>
+                            <div class="strength-mark" data-length="14"></div>
+                            <div class="strength-mark" data-length="16"></div>
+                        </div>
+                    </div>
+                    <input type="number" id="lengthInput" class="length-input" min="8" max="16" value="8">
+                </div>
+            </div>
+            <div class="option-group">
+                <div class="option-title">字符类型</div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="numbers" checked>
+                        <span>
+                            <span class="type-name">数字</span>
+                            <span class="type-chars">0-9</span>
+                        </span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="lowercase">
+                        <span>
+                            <span class="type-name">小写字母</span>
+                            <span class="type-chars">a-z</span>
+                        </span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="uppercase" checked>
+                        <span>
+                            <span class="type-name">大写字母</span>
+                            <span class="type-chars">A-Z</span>
+                        </span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="symbols">
+                        <span>
+                            <span class="type-name">特殊符号</span>
+                            <span class="type-chars">!@#$%^&*</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="password-display" id="passwordDisplay">点击生成密码</div>
+        <div class="button-group">
+            <button class="generate-btn" id="generateBtn">生成新密码</button>
+            <button class="copy-btn" id="copyBtn">
+                <span>复制密码</span>
+            </button>
+        </div>
+        <div class="copy-message" id="copyMessage">密码已复制到剪贴板！</div>
+    </div>
+
+    <script>
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyMessage = document.getElementById('copyMessage');
+        const lengthSlider = document.getElementById('lengthSlider');
+        const lengthInput = document.getElementById('lengthInput');
+        const sliderProgress = document.getElementById('sliderProgress');
+        const strengthMarks = document.querySelectorAll('.strength-mark');
+        const numbersCheckbox = document.getElementById('numbers');
+        const lowercaseCheckbox = document.getElementById('lowercase');
+        const uppercaseCheckbox = document.getElementById('uppercase');
+        const symbolsCheckbox = document.getElementById('symbols');
+
+        // 更新滑块进度条和强度标记
+        function updateSlider() {
+            const value = parseInt(lengthSlider.value);
+            const percent = ((value - 8) / (16 - 8)) * 100;
+            sliderProgress.style.width = `${percent}%`;
+
+            // 更新强度标记
+            strengthMarks.forEach(mark => {
+                const markValue = parseInt(mark.getAttribute('data-length'));
+                if (markValue <= value) {
+                    mark.classList.add('active');
+                } else {
+                    mark.classList.remove('active');
+                }
+            });
+        }
+
+        // 同步滑块和数字输入框
+        lengthSlider.addEventListener('input', () => {
+            lengthInput.value = lengthSlider.value;
+            updateSlider();
+        });
+
+        lengthInput.addEventListener('input', () => {
+            let value = parseInt(lengthInput.value);
+            if (value < 8) value = 8;
+            if (value > 16) value = 16;
+            lengthInput.value = value;
+            lengthSlider.value = value;
+            updateSlider();
+        });
+
+        // 初始化滑块状态
+        updateSlider();
+
+        function generatePassword() {
+            let chars = '';
+            let password = '';
+            
+            // 确保至少选择了一种字符类型
+            if (!numbersCheckbox.checked && 
+                !lowercaseCheckbox.checked && 
+                !uppercaseCheckbox.checked && 
+                !symbolsCheckbox.checked) {
+                numbersCheckbox.checked = true;
+            }
+
+            if (numbersCheckbox.checked) chars += '0123456789';
+            if (lowercaseCheckbox.checked) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (uppercaseCheckbox.checked) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (symbolsCheckbox.checked) chars += '!@#$%^&*';
+
+            const length = parseInt(lengthInput.value);
+            
+            for (let i = 0; i < length; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return password;
+        }
+
+        function showCopyMessage() {
+            copyMessage.classList.add('show');
+            setTimeout(() => {
+                copyMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        async function copyPassword() {
+            const password = passwordDisplay.textContent;
+            if (password !== '点击生成密码') {
+                try {
+                    await navigator.clipboard.writeText(password);
+                    showCopyMessage();
+                } catch (err) {
+                    console.error('复制失败:', err);
+                }
+            }
+        }
+
+        generateBtn.addEventListener('click', () => {
+            const password = generatePassword();
+            passwordDisplay.textContent = password;
+        });
+
+        copyBtn.addEventListener('click', copyPassword);
+        passwordDisplay.addEventListener('click', copyPassword);
+    </script>
+</body>
+</html> 
